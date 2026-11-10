@@ -302,7 +302,7 @@ export class Tutor {
       for (const id of group.pending) {
         if (this.targetById.get(id)!.playMidi !== midi) continue;
         group.pending.delete(id);
-        this.evaluator.hitDirect(id, 'good');
+        this.evaluator.hitDirect(id, 'perfect');
         if (group.pending.size === 0) {
           // Chord complete: resume exactly from this chord.
           this.gi++;
@@ -310,7 +310,7 @@ export class Tutor {
           this.anchorSong = group.time;
           this.anchorAudio = this.io.now();
         }
-        return { kind: 'hit', id, grade: 'good' };
+        return { kind: 'hit', id, grade: 'perfect' };
       }
     }
     this.evaluator.countWrong();

@@ -59,7 +59,7 @@ export const INSTRUMENTS: InstrumentDef[] = [
   {
     id: 'grand', name: 'Grand Piano', category: 'Keys', kind: 'sampler', sampleDir: 'grand', samples: salamanderMap(),
     description: 'Yamaha C5 concert grand, sampled every minor third across all 88 keys.',
-    release: 0.7, gainDb: 0, reverb: 0.22, chorus: 0, credit: SALAMANDER,
+    release: 0.7, gainDb: 4, reverb: 0.22, chorus: 0, credit: SALAMANDER,
   },
   {
     id: 'upright', name: 'Upright Piano', category: 'Keys', kind: 'sampler', sampleDir: 'upright', samples: fluidMap(24, 96),

@@ -64,7 +64,7 @@ const SYNTH_OPTIONS: Record<SynthPreset, { synth: Record<string, unknown>; filte
 
 /** Perceptual velocity curve: single-layer samples need a little help at low velocities. */
 function velocityGain(v: number): number {
-  return Math.pow(Math.max(0.02, Math.min(1, v)), 1.4);
+  return Math.pow(Math.max(0.02, Math.min(1, v)), 1.25);
 }
 
 /**
@@ -197,7 +197,7 @@ export class AudioEngine {
 
     this.leadBus = new Tone.Gain(1).connect(this.master);
     this.accompBus = new Tone.Gain(0.7).connect(this.master);
-    this.drumBus = new Tone.Gain(0.8).connect(this.master);
+    this.drumBus = new Tone.Gain(0.5).connect(this.master);
     this.reverbSend = new Tone.Gain(0.2).connect(reverb);
     this.chorusSend = new Tone.Gain(0).connect(chorus);
     this.leadBus.connect(this.reverbSend);
@@ -474,10 +474,10 @@ export class AudioEngine {
     if (this.ready) this.leadBus.gain.rampTo(v, 0.03);
   }
   setAccompVolume(v: number): void {
-    if (this.ready) this.accompBus.gain.rampTo(v, 0.03);
+    if (this.ready) this.accompBus.gain.rampTo(v * 0.9, 0.03);
   }
   setDrumVolume(v: number): void {
-    if (this.ready) this.drumBus.gain.rampTo(v, 0.03);
+    if (this.ready) this.drumBus.gain.rampTo(v * 0.62, 0.03);
   }
 
   /** Stream of the final mix, for live WAV capture. */

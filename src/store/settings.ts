@@ -78,8 +78,10 @@ export const useSettings = create<SettingsState>()(
       name: 'aurora-keys-settings',
       version: 1,
       partialize: (s) => {
-        const { set: _a, applyPreset: _b, bindKey: _c, shiftOctave: _d, ...rest } = s;
-        void _a; void _b; void _c; void _d;
+        // Octave and transpose are performance state: they always start neutral on a fresh load
+        // (the tutor also moves the octave automatically, which must never stick).
+        const { set: _a, applyPreset: _b, bindKey: _c, shiftOctave: _d, octaveShift: _e, transpose: _f, ...rest } = s;
+        void _a; void _b; void _c; void _d; void _e; void _f;
         return rest;
       },
     },

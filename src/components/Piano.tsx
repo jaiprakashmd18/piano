@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from '@/lib/audio/engine';
 import { codeForMidi, labelForCode } from '@/lib/input/keymap';
 import { keyboardGeometry, midiToName, pitchClass } from '@/lib/music/notes';
@@ -15,13 +15,19 @@ interface PianoProps {
   /** Keys to pulse as "press this now". */
   hints?: number[];
   className?: string;
+  /** Narrow the range on small screens so keys stay wide enough to touch (default on). */
+  autoFit?: boolean;
 }
+
+/** Narrowest white key, in px, that is still comfortable to hit with a finger. */
+const MIN_KEY_PX = 20;
+const FALLBACK_RANGES: [number, number][] = [[48, 84], [53, 84], [60, 84], [60, 77]];
 
 /**
  * The on-screen piano. Key highlights are driven straight from audio-engine
  * events by toggling classes on DOM nodes, so playing never re-renders React.
  */
-function PianoImpl({ low, high, height = 180, hints, className }: PianoProps) {
+function PianoImpl({ low: wantLow, high: wantHigh, height = 180, hints, className, autoFit = true }: PianoProps) {
   const mapping = useSettings((s) => s.mapping);
   const octaveShift = useSettings((s) => s.octaveShift);
   const transpose = useSettings((s) => s.transpose);
@@ -32,6 +38,23 @@ function PianoImpl({ low, high, height = 180, hints, className }: PianoProps) {
   const els = useRef(new Map<number, HTMLDivElement>());
   const counts = useRef(new Map<number, { user: number; auto: number }>());
   const pointers = useRef(new Map<number, number>());
+
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (!autoFit || !root.current) return;
+    const el = root.current;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, [autoFit]);
+
+  const [low, high] = useMemo(() => {
+    if (!autoFit || width === 0) return [wantLow, wantHigh];
+    const fits = (lo: number, hi: number) => width / keyboardGeometry(lo, hi).whiteCount >= MIN_KEY_PX;
+    if (fits(wantLow, wantHigh)) return [wantLow, wantHigh];
+    return FALLBACK_RANGES.find(([lo, hi]) => lo >= wantLow && hi <= wantHigh && fits(lo, hi)) ?? FALLBACK_RANGES[FALLBACK_RANGES.length - 1];
+  }, [autoFit, width, wantLow, wantHigh]);
 
   const { keys, whiteCount } = useMemo(() => keyboardGeometry(low, high), [low, high]);
 
