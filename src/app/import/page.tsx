@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { engine } from '@/lib/audio/engine';
 import { presetById } from '@/lib/input/keymap';
 import { buildMappingPlan, describeReport } from '@/lib/learn/mapping';
 import type { Difficulty } from '@/lib/learn/types';
-import { ImportedMidi, TrackRole, defaultRoles, parseMidi, songFromMidi } from '@/lib/midi/midi';
+import { ImportedMidi, ImportedTrack, TrackRole, defaultRoles, parseMidi, songFromMidi } from '@/lib/midi/midi';
 import { midiToName } from '@/lib/music/notes';
 import { formatTime } from '@/lib/hooks';
 import { songRepo } from '@/lib/storage/db';
@@ -15,6 +16,7 @@ const ROLE_LABEL: Record<TrackRole, string> = {
   right: 'Right hand (melody)',
   left: 'Left hand',
   split: 'Both hands (split at middle C)',
+  backing: 'Backing (the app plays it)',
   skip: 'Leave out',
 };
 
@@ -30,6 +32,37 @@ export default function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [previewing, setPreviewing] = useState<number | null>(null);
+  const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stopPreview = () => {
+    if (previewTimer.current) clearTimeout(previewTimer.current);
+    previewTimer.current = null;
+    engine.cancelScheduled();
+    setPreviewing(null);
+  };
+  useEffect(() => () => engine.cancelScheduled(), []);
+
+  /** Plays the first ten seconds of one track so you can hear which one is the tune. */
+  const preview = async (t: ImportedTrack) => {
+    if (previewing === t.index) return stopPreview();
+    stopPreview();
+    try {
+      await engine.start();
+      await engine.setInstrument(engine.leadId);
+    } catch {
+      return setError('Audio could not be started for the preview.');
+    }
+    const LENGTH = 10;
+    const start = engine.now() + 0.15;
+    for (const n of t.notes) {
+      const at = n.time - t.firstTime;
+      if (at > LENGTH) break;
+      engine.playScheduled(n.midi, n.velocity, Math.min(n.duration, 2), start + at, 'playback');
+    }
+    setPreviewing(t.index);
+    previewTimer.current = setTimeout(() => setPreviewing(null), (LENGTH + 0.5) * 1000);
+  };
 
   const read = async (file: File | undefined) => {
     if (!file) return;
@@ -38,6 +71,7 @@ export default function ImportPage() {
     try {
       if (file.size > 5_000_000) throw new Error('That file is larger than 5 MB, which is unusual for MIDI. Please check it is a .mid file.');
       const parsed = parseMidi(await file.arrayBuffer(), file.name);
+      stopPreview();
       setMidi(parsed);
       setRoles(defaultRoles(parsed));
       setTitle(parsed.name);
@@ -111,7 +145,7 @@ export default function ImportPage() {
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-left text-sm" data-testid="tracks">
                 <thead className="text-[11px] uppercase tracking-wider text-zinc-500">
-                  <tr><th className="py-1.5 pr-3">Track</th><th className="pr-3">Instrument</th><th className="pr-3">Notes</th><th className="pr-3">Range</th><th>Use as</th></tr>
+                  <tr><th className="py-1.5 pr-3">Track</th><th className="pr-3">Instrument</th><th className="pr-3">Notes</th><th className="pr-3">Range</th><th className="pr-3">Plays</th><th className="pr-3">Listen</th><th>Use as</th></tr>
                 </thead>
                 <tbody>
                   {midi.tracks.map((t) => (
@@ -120,6 +154,14 @@ export default function ImportPage() {
                       <td className="pr-3 text-zinc-400">{t.percussion ? 'Percussion' : t.instrument}</td>
                       <td className="pr-3 font-mono text-zinc-300">{t.noteCount}</td>
                       <td className="pr-3 font-mono text-zinc-300">{t.percussion ? '–' : `${midiToName(t.low)} to ${midiToName(t.high)}`}</td>
+                      <td className="whitespace-nowrap pr-3 font-mono text-zinc-300">{formatTime(t.firstTime)} to {formatTime(t.lastTime)}</td>
+                      <td className="pr-3">
+                        {!t.percussion && (
+                          <button className={`btn btn-sm ${previewing === t.index ? 'btn-on' : ''}`} onClick={() => void preview(t)} aria-label={`Preview ${t.name}`}>
+                            {previewing === t.index ? 'Stop' : 'Preview'}
+                          </button>
+                        )}
+                      </td>
                       <td>
                         <select aria-label={`Role of ${t.name}`} className="field" value={roles[t.index] ?? 'skip'} onChange={(e) => setRoles({ ...roles, [t.index]: e.target.value as TrackRole })}>
                           {(Object.keys(ROLE_LABEL) as TrackRole[]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
@@ -130,7 +172,7 @@ export default function ImportPage() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-[11px] text-zinc-500">Drum tracks are left out by default. Choose one melody track for a melody-only lesson, or assign a left-hand track for the full arrangement.</p>
+            <p className="mt-2 text-xs leading-relaxed text-zinc-400">The app has guessed which track is the tune (a single-line part that plays for most of the song). If the guess is wrong, press <span className="font-semibold text-zinc-200">Preview</span> to hear each track and set the right one to “Right hand (melody)”. Set other tracks to “Backing” to have the app play them along with you. Drum tracks are left out.</p>
           </section>
 
           <section className="panel mt-4 p-4" data-testid="analysis">

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Midi } from '@tonejs/midi';
 import { defaultRoles, notesToMidiFile, parseMidi, songFromMidi } from '@/lib/midi/midi';
+import type { ImportedMidi, ImportedTrack } from '@/lib/midi/midi';
 import { Recording, quantizeRecording, scaleRecording, trimLeadingSilence, trimRecording } from '@/lib/audio/recording';
 import { encodeWav } from '@/lib/audio/wav';
 
@@ -53,6 +54,35 @@ describe('MIDI import / export', () => {
     expect(song.notes.length).toBe(3);
     expect(song.notes.filter((n) => n.hand === 'left').length).toBe(1);
     expect(song.source).toBe('import');
+  });
+  it('picks the sustained single-line track as the melody, not just the highest one', () => {
+    const track = (index: number, o: Partial<ImportedTrack>): ImportedTrack => ({
+      index, name: `T${index}`, instrument: 'x', channel: index, percussion: false, noteCount: 200, low: 60, high: 72, avgPitch: 66,
+      firstTime: 5, lastTime: 250, polyphony: 0, notes: [], ...o,
+    });
+    const m: ImportedMidi = {
+      name: 'band', bpm: 95, tempoChanges: 0, timeSignature: [6, 8], duration: 260,
+      tracks: [
+        track(0, { avgPitch: 88, firstTime: 136, lastTime: 242, polyphony: 0.67 }), // high decoration, enters late
+        track(1, { avgPitch: 36 }), // bass
+        track(2, { avgPitch: 60, polyphony: 0.54, noteCount: 1600 }), // strummed guitar
+        track(3, { avgPitch: 83 }), // the tune
+        track(9, { percussion: true, channel: 9 }),
+      ],
+    };
+    const roles = defaultRoles(m);
+    expect(roles[3]).toBe('right');
+    expect(roles[1]).toBe('left');
+    expect(roles[0]).toBe('skip');
+    expect(roles[2]).toBe('skip');
+    expect(roles[9]).toBe('skip');
+  });
+  it('uses the file name as the title and supports app-played backing tracks', () => {
+    const bytes = notesToMidiFile(rec.notes, 120, 'some sequencer name');
+    const parsed = parseMidi(bytes, 'My_Favourite_-_Tune.mid');
+    expect(parsed.name).toBe('My Favourite - Tune');
+    const song = songFromMidi(parsed, { [parsed.tracks[0].index]: 'backing' }, 'b');
+    expect(song.notes.every((n) => n.backing)).toBe(true);
   });
   it('rejects files that are not MIDI', () => {
     expect(() => parseMidi(new Uint8Array([1, 2, 3, 4]))).toThrow(/Standard MIDI File/);

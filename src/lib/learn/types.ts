@@ -7,6 +7,8 @@ export interface SongNote {
   duration: number;
   velocity: number;
   hand: Hand;
+  /** Accompaniment from an imported track: always played by the app, never asked of the learner. */
+  backing?: boolean;
 }
 
 export type Difficulty = 'Beginner' | 'Easy' | 'Intermediate' | 'Advanced';

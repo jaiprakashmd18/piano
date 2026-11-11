@@ -109,8 +109,8 @@ export function LearnView() {
 
   const songId = params.get('song') ?? 'ode-to-joy';
   const song = useMemo(() => songs.find((s) => s.id === songId) ?? null, [songs, songId]);
-  const hasLeft = useMemo(() => song?.notes.some((n) => n.hand === 'left') ?? false, [song]);
-  const hasRight = useMemo(() => song?.notes.some((n) => n.hand === 'right') ?? false, [song]);
+  const hasLeft = useMemo(() => song?.notes.some((n) => n.hand === 'left' && !n.backing) ?? false, [song]);
+  const hasRight = useMemo(() => song?.notes.some((n) => n.hand === 'right' && !n.backing) ?? false, [song]);
 
   const hands: Hand[] = useMemo(() => {
     if (mode === 'listen') return [];
@@ -125,8 +125,10 @@ export function LearnView() {
 
   const { plan, backingNotes } = useMemo(() => {
     const notes = song?.notes ?? [];
-    const mine = hands.length ? notes.filter((n) => hands.includes(n.hand)) : notes;
-    const rest = hands.length ? notes.filter((n) => !hands.includes(n.hand)) : [];
+    // Backing tracks from an imported file are never the learner's job.
+    const isMine = (n: (typeof notes)[number]) => !n.backing && (hands.length === 0 || hands.includes(n.hand));
+    const mine = notes.filter(isMine);
+    const rest = notes.filter((n) => !isMine(n));
     return {
       plan: buildMappingPlan(mine, mapping, { mode: effMapMode, transpose, maxSimultaneous: effMaxKeys || undefined }),
       backingNotes: rest,
@@ -159,6 +161,11 @@ export function LearnView() {
     );
     if (effMapMode === 'manual' && hands.length) useSettings.getState().set({ octaveShift: plan.shifts[0]?.shift ?? 0 });
     if (mode !== 'step' && !loop && keepTime > 0 && keepTime < song.duration) tutor.seek(keepTime);
+    else if (mode !== 'step' && !loop && hands.length) {
+      // Many arrangements open with bars where the learner has nothing to play: start just before their first note.
+      const first = plan.notes.find((n) => !n.assisted && n.code !== null)?.time ?? 0;
+      if (first > 4) tutor.seek(first - 3);
+    }
     tutorRef.current = tutor;
     savedRef.current = false;
     setSnap({ ...EMPTY, time: tutor.time() });
@@ -263,9 +270,10 @@ export function LearnView() {
       });
     }
     if (backing || listen) {
-      backingNotes.forEach((n, i) =>
-        out.push({ id: -1 - i, midi: n.midi + transpose, time: n.time, duration: n.duration, hand: n.hand, target: false, key: '', name: '', folded: false }),
-      );
+      backingNotes.forEach((n, i) => {
+        if (n.backing) return; // heard, but kept out of the lane so the learner's notes stay readable
+        out.push({ id: -1 - i, midi: n.midi + transpose, time: n.time, duration: n.duration, hand: n.hand, target: false, key: '', name: '', folded: false });
+      });
     }
     out.sort((a, b) => a.time - b.time);
     // The keyboard is framed around what the learner plays; far-away backing notes are simply off-screen.
@@ -311,6 +319,13 @@ export function LearnView() {
     return snap.awaited.map((id) => byIndex.get(id)!).filter(Boolean);
   }, [snap.awaited, plan]);
   const hintMidis = useMemo(() => awaitedNotes.map((n) => n.playMidi), [awaitedNotes]);
+
+  // Seconds until the learner's next note, so a long rest never looks like a broken lesson.
+  const nextNoteIn = useMemo(() => {
+    if (hands.length === 0) return null;
+    const next = plan.notes.find((n) => !n.assisted && n.code !== null && n.time >= snap.time - 0.05);
+    return next ? next.time - snap.time : null;
+  }, [plan, hands, snap.time]);
 
   const warnings = useMemo(() => (hands.length ? describeReport(plan.report, effMapMode) : []), [plan, hands, effMapMode]);
   const isPractice = hands.length > 0;
@@ -392,6 +407,13 @@ export function LearnView() {
                     <span className="mt-1 text-[11px] text-zinc-400">{midiToName(n.playMidi)}</span>
                   </span>
                 ))}
+              </div>
+            )}
+
+            {nextNoteIn !== null && nextNoteIn > 4 && !snap.finished && (
+              <div data-testid="next-note" className="absolute left-2 top-2 flex items-center gap-2 rounded-lg border border-white/10 bg-ink-950/85 px-3 py-1.5 text-xs text-zinc-300 backdrop-blur">
+                Your next note is in {Math.round(nextNoteIn)} s
+                <button className="btn btn-sm" onClick={() => tutorRef.current?.seek(snap.time + nextNoteIn - 3)}>Skip there</button>
               </div>
             )}
 

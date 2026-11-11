@@ -55,7 +55,7 @@ Open http://localhost:3000, go to **Play Piano**, click **Enable audio** (browse
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm test` | Unit tests (Vitest, 71 tests) |
+| `npm test` | Unit tests (Vitest, 73 tests) |
 | `npm run test:e2e` | Browser smoke test (needs a running server, see below) |
 | `npm run test:responsive` | Layout audit of every page at ten screen sizes (needs a running server) |
 
