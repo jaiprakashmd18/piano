@@ -10,8 +10,8 @@ import { useSettings } from '@/store/settings';
 interface PianoProps {
   low: number;
   high: number;
-  /** Height in px. */
-  height?: number;
+  /** Height in px, or any CSS length (e.g. a clamp() that follows the viewport). */
+  height?: number | string;
   /** Keys to pulse as "press this now". */
   hints?: number[];
   className?: string;

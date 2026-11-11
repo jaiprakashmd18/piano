@@ -74,3 +74,20 @@ export function formatTime(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
+
+/** True when the viewport matches a CSS media query; false during server render. */
+export function useMedia(query: string): boolean {
+  return useSyncExternalStore(
+    (fn) => {
+      const m = window.matchMedia(query);
+      m.addEventListener('change', fn);
+      return () => m.removeEventListener('change', fn);
+    },
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
+}
+
+/** Fluid sizes shared by the playing pages: they scale with the viewport height between sensible limits. */
+export const PIANO_HEIGHT = 'clamp(118px, 26vh, 280px)';
+export const PIANO_HEIGHT_COMPACT = 'clamp(104px, 20vh, 230px)';

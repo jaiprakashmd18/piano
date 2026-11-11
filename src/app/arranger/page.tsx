@@ -11,7 +11,7 @@ import { ChordModifier, modifyChord, setChordDirect, triggerPad } from '@/lib/in
 import { ActionId, codesForAction, labelForCode } from '@/lib/input/keymap';
 import { ALL_QUALITIES, ChordQuality, QUALITY_LABEL, ROMAN_MAJOR, ROMAN_MINOR, chordName, chordPadsForKey } from '@/lib/music/chords';
 import { NOTE_NAMES } from '@/lib/music/notes';
-import { useArranger, useEngineStatus, usePerformanceKeys, useUi } from '@/lib/hooks';
+import { PIANO_HEIGHT_COMPACT, useArranger, useEngineStatus, usePerformanceKeys, useUi } from '@/lib/hooks';
 import { useSettings } from '@/store/settings';
 
 function Key({ action }: { action: ActionId }) {
@@ -50,19 +50,19 @@ export default function ArrangerPage() {
   const shownVariation = a.pendingVariation ?? a.variation;
 
   return (
-    <div className="mx-auto flex max-w-[1500px] flex-col gap-4 p-4 lg:p-6">
+    <div className="mx-auto flex max-w-[1500px] flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6 2xl:max-w-[1800px] min-[2300px]:max-w-[2200px]">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Arranger Keyboard</h1>
-        <p className="text-sm text-zinc-400">
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">Arranger Keyboard</h1>
+        <p className="hidden text-sm text-zinc-400 md:block short:hidden">
           Pick a rhythm, press <span className="kbd">Space</span> to start, choose chords with the number keys and play the melody on the letter keys.
         </p>
       </header>
       <AudioGate />
       {a.error && <div role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-100">{a.error}</div>}
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_1fr]">
+      <div className="grid gap-3 sm:gap-4 xl:grid-cols-[1.1fr_1fr]">
         {/* Styles */}
-        <section className="panel p-4" aria-label="Rhythm styles">
+        <section className="panel order-2 p-3 sm:p-4 xl:order-1" aria-label="Rhythm styles">
           <div className="mb-3 flex items-center justify-between">
             <span className="panel-title">Rhythm style</span>
             <span className="text-xs text-zinc-500">{a.loading ? 'Loading band…' : `${style.name} · ${beats}/4 feel`}</span>
@@ -84,7 +84,7 @@ export default function ArrangerPage() {
         </section>
 
         {/* Transport */}
-        <section className="panel flex flex-col gap-4 p-4" aria-label="Rhythm controls">
+        <section className="panel order-1 flex flex-col gap-3 p-3 sm:gap-4 sm:p-4 xl:order-2" aria-label="Rhythm controls">
           <div className="flex flex-wrap items-center gap-4">
             <div>
               <div className="panel-title">Tempo</div>
@@ -158,7 +158,7 @@ export default function ArrangerPage() {
       </div>
 
       {/* Chords */}
-      <section className="panel p-4" aria-label="Chord control">
+      <section className="panel p-3 sm:p-4" aria-label="Chord control">
         <div className="flex flex-wrap items-center gap-4">
           <div className="min-w-[8rem]">
             <div className="panel-title">Chord</div>
@@ -203,8 +203,8 @@ export default function ArrangerPage() {
           {pads.map((c, i) => {
             const active = a.chord && a.chord.root === c.root && a.chord.quality === c.quality;
             return (
-              <button key={i} data-testid={`pad-${i}`} className={`btn flex-col gap-0.5 py-2.5 ${active ? 'btn-on' : ''}`} onClick={() => triggerPad(i)} disabled={s.chordMode !== 'pads'}>
-                <span className="text-base font-semibold">{chordName(c)}</span>
+              <button key={i} data-testid={`pad-${i}`} className={`btn flex-col gap-0.5 px-1 py-2.5 ${active ? 'btn-on' : ''}`} onClick={() => triggerPad(i)} disabled={s.chordMode !== 'pads'}>
+                <span className="text-sm font-semibold sm:text-base">{chordName(c)}</span>
                 <span className="flex items-center text-[10px] text-zinc-500">{roman[i]}<Key action={`chord:${i}`} /></span>
               </button>
             );
@@ -226,11 +226,13 @@ export default function ArrangerPage() {
         </p>
       </section>
 
-      <ControlBar showMetronome={false} />
-      <div className="panel overflow-hidden p-3 pb-4">
-        <Piano low={s.rangeLow} high={s.rangeHigh} height={170} />
+      <div className="panel overflow-hidden p-2 pb-3 sm:p-3 sm:pb-4">
+        <Piano low={s.rangeLow} high={s.rangeHigh} height={PIANO_HEIGHT_COMPACT} />
       </div>
-      <KeyLegend showChords />
+      <ControlBar showMetronome={false} />
+      <div className="hidden md:block">
+        <KeyLegend showChords />
+      </div>
     </div>
   );
 }

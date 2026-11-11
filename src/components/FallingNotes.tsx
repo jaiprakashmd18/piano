@@ -31,7 +31,8 @@ interface Props {
   cues: LaneCue[];
   low: number;
   high: number;
-  height: number;
+  /** Any CSS height. */
+  height: number | string;
   /** Pixels per second of song time (zoom). */
   pps: number;
   /** Song clock; read every animation frame. */

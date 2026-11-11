@@ -23,14 +23,14 @@ const KEYS: [string, string][] = [
 
 export default function HomePage() {
   return (
-    <div className="mx-auto max-w-6xl p-6 lg:p-10">
-      <section className="panel relative overflow-hidden p-8 lg:p-12">
+    <div className="mx-auto max-w-6xl p-3 sm:p-6 lg:p-10 2xl:max-w-7xl">
+      <section className="panel relative overflow-hidden p-5 sm:p-8 lg:p-12">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
         <p className="panel-title text-accent">No piano needed</p>
-        <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-zinc-50 lg:text-5xl">
+        <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-zinc-50 sm:text-4xl lg:text-5xl">
           Your laptop keyboard is the instrument.
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-zinc-400">
+        <p className="mt-4 max-w-2xl text-base text-zinc-400 sm:text-lg">
           Aurora Keys is a piano, an arranger keyboard and a piano teacher in one page. Press <span className="kbd">A</span> for middle C and start playing.
           Free, no account, nothing to install.
         </p>

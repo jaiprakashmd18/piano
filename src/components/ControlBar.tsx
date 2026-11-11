@@ -92,8 +92,8 @@ export function ControlBar({ showMetronome = true }: { showMetronome?: boolean }
   const fullscreen = useUi((u) => u.fullscreen);
   const def = instrumentById(s.instrumentId);
   return (
-    <div className="panel flex flex-wrap items-end gap-x-6 gap-y-4 p-4">
-      <div className="flex min-w-[13rem] flex-col gap-1.5">
+    <div className="panel flex flex-wrap items-end gap-x-4 gap-y-3 p-3 sm:gap-x-6 sm:gap-y-4 sm:p-4">
+      <div className="flex min-w-[11rem] flex-1 flex-col gap-1.5 sm:flex-none sm:min-w-[13rem]">
         <span className="panel-title">Instrument</span>
         <InstrumentSelect />
       </div>
@@ -116,7 +116,7 @@ export function ControlBar({ showMetronome = true }: { showMetronome?: boolean }
           </div>
         </div>
       )}
-      <div className="ml-auto flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 sm:ml-auto">
         <span className="panel-title">View</span>
         <div className="flex gap-1">
           <button className="btn btn-sm" onClick={toggleFullscreen}>{fullscreen ? 'Exit full screen' : 'Full screen'}</button>

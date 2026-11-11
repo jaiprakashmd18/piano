@@ -12,7 +12,7 @@ import { downloadBlob, safeFileName } from '@/lib/audio/wav';
 import { engine } from '@/lib/audio/engine';
 import type { Song } from '@/lib/learn/types';
 import { notesToMidiFile, parseMidi } from '@/lib/midi/midi';
-import { formatTime, useArranger, useEngineStatus, usePerformanceKeys } from '@/lib/hooks';
+import { PIANO_HEIGHT_COMPACT, formatTime, useArranger, useEngineStatus, usePerformanceKeys } from '@/lib/hooks';
 import { recordingRepo, songRepo } from '@/lib/storage/db';
 import { useSettings } from '@/store/settings';
 
@@ -65,7 +65,7 @@ function Roll({ take, trim }: { take: Recording; trim: [number, number] }) {
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
   }, []);
-  return <canvas ref={ref} className="h-40 w-full rounded-lg border border-white/5" role="img" aria-label="Recorded notes" />;
+  return <canvas ref={ref} className="h-28 w-full rounded-lg border border-white/5 sm:h-40 2xl:h-56" role="img" aria-label="Recorded notes" />;
 }
 
 export default function StudioPage() {
@@ -213,16 +213,19 @@ export default function StudioPage() {
   const ready = status === 'ready';
 
   return (
-    <div className="mx-auto flex max-w-[1500px] flex-col gap-4 p-4 lg:p-6">
+    <div className="mx-auto flex max-w-[1500px] flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6 2xl:max-w-[1800px] min-[2300px]:max-w-[2200px]">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Recording Studio</h1>
-        <p className="text-sm text-zinc-400">Record what you play, tidy it up, then export MIDI or WAV. Projects stay in this browser.</p>
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">Recording Studio</h1>
+        <p className="hidden text-sm text-zinc-400 md:block short:hidden">Record what you play, tidy it up, then export MIDI or WAV. Projects stay in this browser.</p>
       </header>
       <AudioGate />
+      <div className="panel overflow-hidden p-2 pb-3 sm:p-3 sm:pb-4">
+        <Piano low={low} high={high} height={PIANO_HEIGHT_COMPACT} />
+      </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <section className="panel flex flex-wrap items-center gap-4 p-4" aria-label="Record">
+          <section className="panel flex flex-wrap items-center gap-3 p-3 sm:gap-4 sm:p-4" aria-label="Record">
             <button data-testid="record" className={`btn px-6 py-3 text-base ${recState !== 'idle' ? 'btn-danger animate-pulse' : 'btn-primary'}`} disabled={!ready} onClick={toggleRecord}>
               <span className={`h-3 w-3 rounded-full ${recState !== 'idle' ? 'bg-red-400' : 'bg-red-600'}`} />
               {recState === 'idle' ? 'Record' : recState === 'countin' ? 'Cancel' : 'Stop'}
@@ -320,9 +323,6 @@ export default function StudioPage() {
       </div>
 
       <ControlBar />
-      <div className="panel overflow-hidden p-3 pb-4">
-        <Piano low={low} high={high} height={170} />
-      </div>
     </div>
   );
 }

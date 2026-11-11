@@ -76,14 +76,14 @@ export default function ImportPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl p-4 lg:p-6">
+    <div className="mx-auto max-w-5xl p-3 sm:p-4 lg:p-6 2xl:max-w-6xl">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">MIDI Import</h1>
         <p className="text-sm text-zinc-400">Turn a Standard MIDI File into a laptop-keyboard lesson. Files are read in your browser and never uploaded.</p>
       </header>
 
       <div
-        className={`panel mt-4 flex flex-col items-center gap-3 border-dashed p-8 text-center transition ${dragging ? '!border-accent bg-accent/5' : ''}`}
+        className={`panel mt-4 flex flex-col items-center gap-3 border-dashed p-5 text-center sm:p-8 transition ${dragging ? '!border-accent bg-accent/5' : ''}`}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); void read(e.dataTransfer.files[0]); }}

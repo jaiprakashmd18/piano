@@ -107,7 +107,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4 lg:p-6">
+    <div className="mx-auto flex max-w-6xl flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6 2xl:max-w-7xl">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Settings</h1>
         <p className="text-sm text-zinc-400">Everything is stored in this browser. No account is needed.</p>

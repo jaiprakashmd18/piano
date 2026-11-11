@@ -57,6 +57,7 @@ Open http://localhost:3000, go to **Play Piano**, click **Enable audio** (browse
 | `npm run typecheck` | TypeScript, no emit |
 | `npm test` | Unit tests (Vitest, 71 tests) |
 | `npm run test:e2e` | Browser smoke test (needs a running server, see below) |
+| `npm run test:responsive` | Layout audit of every page at ten screen sizes (needs a running server) |
 
 ### Testing
 
@@ -75,6 +76,10 @@ npm run build && npm start
 ```bash
 npm run test:e2e
 ```
+
+### Screen sizes
+
+The layout adapts from 320 px phones to 2560 px monitors. On small screens the navigation collapses to one compact bar, the piano moves above the control panel so it is visible without scrolling, the keyboard range narrows automatically so keys stay at least about 19 px wide, and the Learn page defaults to a one-octave lesson. Heights follow the viewport, so a phone held sideways and a tall monitor both use the space they have. `npm run test:responsive` checks every page at ten sizes for sideways scrolling, clipped elements, narrow keys and small tap targets.
 
 ## Deploying to Vercel
 

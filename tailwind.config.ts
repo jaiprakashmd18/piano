@@ -4,6 +4,8 @@ const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      // Short viewports, e.g. a phone held sideways: drop secondary text so the instrument stays on screen.
+      screens: { short: { raw: '(max-height: 520px)' } },
       colors: {
         ink: { 950: '#07080a', 900: '#0c0e12', 850: '#11141a', 800: '#161a21', 700: '#1f242d', 600: '#2a313c', 500: '#3a4350' },
         accent: { DEFAULT: '#f5b544', soft: '#ffd98a', deep: '#c98a1c' },

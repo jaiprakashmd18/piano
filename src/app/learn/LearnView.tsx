@@ -15,8 +15,8 @@ import type { Stats } from '@/lib/learn/evaluator';
 import { MappingMode, buildMappingPlan, describeReport, suggestTransposition } from '@/lib/learn/mapping';
 import { PHRASE_PASS, Tutor, splitPhrases } from '@/lib/learn/tutor';
 import type { Hand, Song } from '@/lib/learn/types';
-import { midiToName } from '@/lib/music/notes';
-import { formatTime, useEngineStatus, usePerformanceKeys, useUi } from '@/lib/hooks';
+import { keyboardGeometry, midiToName } from '@/lib/music/notes';
+import { formatTime, useEngineStatus, useMedia, usePerformanceKeys, useUi } from '@/lib/hooks';
 import { loadAllSongs } from '@/lib/songs';
 import { progressRepo } from '@/lib/storage/db';
 import { toggleFullscreen } from '@/components/AppShell';
@@ -77,7 +77,11 @@ export function LearnView() {
   const [mode, setMode] = useState<Mode>('wait');
   const [handChoice, setHandChoice] = useState<HandChoice>('right');
   const [speed, setSpeed] = useState(1);
-  const [mapMode, setMapMode] = useState<MappingMode>('auto');
+  // Phones default to a single octave so the keys stay large; wider screens follow the music.
+  const narrow = useMedia('(max-width: 767px)');
+  const coarse = useMedia('(pointer: coarse)');
+  const [chosenMapMode, setMapMode] = useState<MappingMode | null>(null);
+  const mapMode: MappingMode = chosenMapMode ?? (narrow ? 'fold' : 'auto');
   const [maxKeys, setMaxKeys] = useState(0);
   const [transpose, setTranspose] = useState(0);
   const [backing, setBacking] = useState(true);
@@ -273,15 +277,19 @@ export function LearnView() {
       hi = Math.max(hi, n.midi);
     }
     if (out.length === 0) [lo, hi] = [60, 72];
-    const pad = listen ? 1 : 8;
+    const pad = listen || narrow ? 1 : 8;
+    const minSpan = narrow ? 17 : 36;
     lo = Math.max(21, Math.floor((lo - pad) / 12) * 12);
     hi = Math.min(108, Math.ceil((hi + pad) / 12) * 12);
-    while (hi - lo < 36) {
+    while (hi - lo < minSpan) {
       if (lo > 36) lo -= 12;
       else hi += 12;
     }
     return { laneNotes: out, low: lo, high: hi };
-  }, [plan, backingNotes, backing, hands, transpose, layout]);
+  }, [plan, backingNotes, backing, hands, transpose, layout, narrow]);
+
+  // If the song still needs more keys than the screen can show at a touchable size, the lane scrolls sideways.
+  const laneMinWidth = useMemo(() => keyboardGeometry(low, high).whiteCount * (coarse ? 19 : 12), [low, high, coarse]);
 
   const cues: LaneCue[] = useMemo(() => {
     if (hands.length === 0 || effMapMode === 'fold') return [];
@@ -307,7 +315,7 @@ export function LearnView() {
   const warnings = useMemo(() => (hands.length ? describeReport(plan.report, effMapMode) : []), [plan, hands, effMapMode]);
   const isPractice = hands.length > 0;
   const wait = mode === 'beginner' || mode === 'wait';
-  const laneHeight = fullscreen ? 520 : 380;
+  const laneHeight = fullscreen ? 'clamp(150px, calc(100vh - 300px), 1200px)' : 'clamp(150px, max(42vh, calc(100vh - 560px)), 1000px)';
 
   if (songs.length > 0 && !song) {
     return (
@@ -319,26 +327,26 @@ export function LearnView() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-col gap-4 p-4 lg:p-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <div className="mx-auto flex max-w-[1600px] flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6 2xl:max-w-[1900px] min-[2300px]:max-w-[2300px]">
+      <header className="flex flex-wrap items-end justify-between gap-2 sm:gap-3 short:flex-nowrap short:items-center">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight text-zinc-50">{song?.title ?? 'Learn Songs'}</h1>
+          <h1 className="truncate text-xl font-semibold sm:text-2xl tracking-tight text-zinc-50">{song?.title ?? 'Learn Songs'}</h1>
           {song && (
-            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-zinc-400">
+            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-zinc-400 short:hidden">
               {song.artist}
               <span className="chip">{song.difficulty}</span>
               <span className="chip">{song.key}</span>
               <span className="chip">{song.bpm} BPM</span>
               <span className="chip">{formatTime(song.duration)}</span>
-              <span className="chip">{song.arrangement}</span>
+              <span className="chip hidden sm:inline-flex">{song.arrangement}</span>
               {best !== null && <span className="chip !border-accent/40 !text-accent-soft">Best {best}%</span>}
             </p>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto short:w-auto short:flex-nowrap">
           <select
             aria-label="Song"
-            className="field max-w-[16rem]"
+            className="field min-w-0 basis-full sm:max-w-[16rem] sm:basis-auto short:basis-auto"
             value={songId}
             onChange={(e) => {
               router.replace(`/learn?song=${encodeURIComponent(e.target.value)}`);
@@ -347,32 +355,36 @@ export function LearnView() {
           >
             {songs.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
           </select>
-          <InstrumentSelect className="max-w-[12rem]" />
+          <InstrumentSelect className="min-w-0 flex-1 sm:max-w-[12rem] sm:flex-none" />
           <button className="btn btn-sm" onClick={toggleFullscreen}>{fullscreen ? 'Exit full screen' : 'Full screen'}</button>
         </div>
       </header>
       <AudioGate />
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
+      <div className="grid gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_330px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex min-w-0 flex-col gap-3">
           <div className="panel relative overflow-hidden">
-            <div
-              onWheel={(e) => {
-                const t = tutorRef.current;
-                if (!t) return;
-                if (e.ctrlKey || e.metaKey) setPps((p) => Math.max(60, Math.min(420, p * (e.deltaY > 0 ? 0.9 : 1.1))));
-                else if (!t.playing || !t.isPractice) t.seek(t.time() - e.deltaY / pps);
-              }}
-            >
-              <FallingNotes
-                notes={laneNotes} cues={cues} low={low} high={high} height={laneHeight} pps={pps} getTime={getTime} getState={getState}
-                beat={beat} barBeats={barBeats} challenge={mode === 'challenge'} loop={loop} wrongAt={wrongAt} showNames={showNoteNames}
-              />
+            <div className="overflow-x-auto overscroll-x-contain">
+              <div style={{ minWidth: laneMinWidth }}>
+                <div
+                  onWheel={(e) => {
+                    const t = tutorRef.current;
+                    if (!t) return;
+                    if (e.ctrlKey || e.metaKey) setPps((p) => Math.max(60, Math.min(420, p * (e.deltaY > 0 ? 0.9 : 1.1))));
+                    else if (!t.playing || !t.isPractice) t.seek(t.time() - e.deltaY / pps);
+                  }}
+                >
+                  <FallingNotes
+                    notes={laneNotes} cues={cues} low={low} high={high} height={laneHeight} pps={pps} getTime={getTime} getState={getState}
+                    beat={beat} barBeats={barBeats} challenge={mode === 'challenge'} loop={loop} wrongAt={wrongAt} showNames={showNoteNames}
+                  />
+                </div>
+                <Piano low={low} high={high} height="clamp(92px, 17vh, 190px)" hints={hintMidis} autoFit={false} />
+              </div>
             </div>
-            <Piano low={low} high={high} height={150} hints={hintMidis} autoFit={false} />
 
             {wait && isPractice && snap.playing && awaitedNotes.length > 0 && (
-              <div data-testid="prompt" className="pointer-events-none absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-good/40 bg-ink-950/85 px-5 py-3 shadow-lg backdrop-blur">
+              <div data-testid="prompt" className="pointer-events-none absolute left-1/2 top-2 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-good/40 bg-ink-950/85 px-3 py-2 shadow-lg backdrop-blur sm:top-4 sm:gap-3 sm:px-5 sm:py-3">
                 <span className="text-sm text-zinc-300">Press</span>
                 {awaitedNotes.map((n) => (
                   <span key={n.index} className="flex flex-col items-center">
@@ -413,7 +425,7 @@ export function LearnView() {
           </div>
 
           {/* Transport */}
-          <div className="panel flex flex-col gap-3 p-4">
+          <div className="panel flex flex-col gap-3 p-3 sm:p-4">
             <div className="flex items-center gap-3">
               <span className="w-10 font-mono text-xs text-zinc-400">{formatTime(snap.time)}</span>
               <div className="relative flex-1">
@@ -432,13 +444,13 @@ export function LearnView() {
                 {snap.playing ? 'Pause' : 'Play'} <span className="kbd">Space</span>
               </button>
               <button className="btn" onClick={restart}>Restart <span className="kbd">Enter</span></button>
-              <div className="ml-2 flex items-center gap-1" role="group" aria-label="Practice speed">
+              <div className="flex items-center gap-1 sm:ml-2" role="group" aria-label="Practice speed">
                 <span className="panel-title mr-1">Speed</span>
                 {SPEEDS.map((s) => (
                   <button key={s} className={`btn btn-sm ${speed === s ? 'btn-on' : ''}`} aria-pressed={speed === s} onClick={() => setSpeed(s)}>{s * 100}%</button>
                 ))}
               </div>
-              <div className="ml-2 flex items-center gap-1" role="group" aria-label="Loop">
+              <div className="flex items-center gap-1 sm:ml-2" role="group" aria-label="Loop">
                 <span className="panel-title mr-1">Loop</span>
                 <button className={`btn btn-sm ${loopStart !== null ? 'btn-on' : ''}`} onClick={() => setLoopStart(getTime())} disabled={mode === 'step'}>
                   Set A{loopStart !== null ? ` ${formatTime(loopStart)}` : ''}
@@ -461,7 +473,7 @@ export function LearnView() {
                 <button className="btn btn-sm w-8" onClick={() => setPps((p) => Math.min(420, p * 1.25))} aria-label="Zoom in">+</button>
               </div>
             </div>
-            <p className="text-[11px] text-zinc-500">
+            <p className="hidden text-[11px] text-zinc-500 sm:block">
               Blue = right hand, purple = left hand, grey = played by the app, dashed outline = moved to another octave to fit your keys.
               Scroll over the notes to move through the song; Ctrl + scroll zooms. Octave now: {octaveShift > 0 ? `+${octaveShift}` : octaveShift}.
             </p>

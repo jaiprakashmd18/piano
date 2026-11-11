@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "node e2e/smoke.cjs"
+    "test:e2e": "node e2e/smoke.cjs",
+    "test:responsive": "node e2e/responsive.cjs"
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",

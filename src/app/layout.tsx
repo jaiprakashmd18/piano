@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     'Play a sampled grand piano with your laptop keyboard, add automatic accompaniment rhythms, and learn songs with falling notes and key-letter guidance. Free, no account, runs in your browser.',
 };
 
-export const viewport: Viewport = { themeColor: '#07080a', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: '#07080a', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -46,7 +46,7 @@ export default function LibraryPage() {
   }, [songs, query, difficulty, category, sort]);
 
   return (
-    <div className="mx-auto max-w-6xl p-4 lg:p-6">
+    <div className="mx-auto max-w-6xl p-3 sm:p-4 lg:p-6 2xl:max-w-[1700px]">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Song Library</h1>
@@ -90,7 +90,7 @@ export default function LibraryPage() {
       ) : shown.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-400">No songs match. Clear the search or import your own MIDI file.</p>
       ) : (
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3" data-testid="song-list">
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" data-testid="song-list">
           {shown.map((s) => (
             <li key={s.id} className="panel flex flex-col p-4">
               <div className="flex items-start justify-between gap-2">
