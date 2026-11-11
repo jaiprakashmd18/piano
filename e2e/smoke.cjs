@@ -228,7 +228,7 @@ const check = (name, ok, detail = '') => {
   const dr = m.addTrack();
   dr.channel = 9;
   dr.addNote({ midi: 36, time: 0, duration: 0.1 });
-  const tmp = path.join(os.tmpdir(), 'aurora-smoke.mid');
+  const tmp = path.join(os.tmpdir(), 'Smoke_Test_Tune.mid');
   fs.writeFileSync(tmp, Buffer.from(m.toArray()));
   await page.goto(`${base}/import`);
   await page.getByTestId('midi-file').setInputFiles(tmp);
